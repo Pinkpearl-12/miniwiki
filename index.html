@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MiniWiki</title>
+  <style>
+    :root {
+      --bg: #fffaf7;
+      --panel: rgba(255, 255, 255, 0.82);
+      --panel-strong: #ffffff;
+      --text: #5f566b;
+      --muted: #8f839f;
+      --pink: #ffdce8;
+      --peach: #ffe9d8;
+      --mint: #def7ee;
+      --lavender: #ede4ff;
+      --border: rgba(170, 152, 196, 0.22);
+      --shadow: 0 18px 45px rgba(191, 176, 209, 0.18);
+      --shadow-soft: 0 10px 24px rgba(191, 176, 209, 0.12);
+      --highlight: #fff8bf;
+      --danger: #f48fa3;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(255, 220, 232, 0.95), transparent 28%),
+        radial-gradient(circle at top right, rgba(237, 228, 255, 0.95), transparent 24%),
+        linear-gradient(180deg, #fffdfa 0%, #fff6f7 45%, #fdf9ff 100%);
+      padding: 32px 18px 56px;
+    }
+
+    .app {
+      width: min(1320px, 100%);
+      margin: 0 auto;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.8fr) minmax(270px, 0.75fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .shell,
+    .sidebar {
+      background: var(--panel);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+    }
+
+    .shell {
+      padding: 30px;
+    }
+
+    .sidebar {
+      padding: 22px;
+      position: sticky;
+      top: 24px;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--peach), var(--lavender));
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3rem);
+      letter-spacing: 0.02em;
+    }
+
+    .subtitle {
+      margin: 12px auto 0;
+      max-width: 580px;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    .hero-stats {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .stat-pill {
+      padding: 9px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.75);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .link-settings {
+      display: grid;
+      gap: 8px;
+      margin: 0 auto 18px;
+      max-width: 520px;
+    }
+
+    .link-label {
+      text-align: center;
+      font-size: 0.92rem;
+      color: var(--muted);
+    }
+
+    .base-url-input {
+      width: 100%;
+      border: 1px solid rgba(193, 180, 214, 0.28);
+      border-radius: 16px;
+      padding: 12px 14px;
+      font: inherit;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.9);
+      outline: none;
+      text-align: center;
+    }
+
+    .base-url-input:focus {
+      border-color: rgba(154, 132, 194, 0.45);
+      box-shadow: 0 0 0 4px rgba(237, 228, 255, 0.7);
+    }
+
+    button {
+      border: 0;
+      border-radius: 16px;
+      padding: 12px 18px;
+      font: inherit;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+      box-shadow: var(--shadow-soft);
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .add-btn {
+      background: linear-gradient(135deg, var(--mint), #f4fff9);
+      color: #42695b;
+    }
+
+    .save-btn {
+      background: linear-gradient(135deg, var(--pink), #fff4f8);
+      color: #87546b;
+    }
+
+    .status {
+      min-height: 24px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+    }
+
+    .blocks {
+      display: grid;
+      gap: 18px;
+    }
+
+    .empty {
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px dashed var(--border);
+      border-radius: 22px;
+      padding: 28px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .block {
+      background: var(--panel-strong);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow-soft);
+      padding: 18px;
+      transition: box-shadow 0.25s ease, border-color 0.25s ease, transform 0.25s ease, background-color 0.25s ease;
+    }
+
+    .block.highlight {
+      border-color: rgba(230, 183, 76, 0.6);
+      background: linear-gradient(180deg, #fffef2, var(--panel-strong));
+      box-shadow: 0 0 0 6px rgba(255, 248, 191, 0.65), var(--shadow-soft);
+      transform: translateY(-2px);
+    }
+
+    .block-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .block-meta {
+      display: grid;
+      gap: 12px;
+      flex: 1 1 320px;
+    }
+
+    .block-id {
+      font-size: 0.86rem;
+      color: var(--muted);
+      background: #faf6ff;
+      border-radius: 999px;
+      padding: 8px 12px;
+    }
+
+    .block-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-self: flex-start;
+    }
+
+    .title-input {
+      width: 100%;
+      border: 1px solid rgba(193, 180, 214, 0.28);
+      border-radius: 16px;
+      padding: 14px 16px;
+      font: inherit;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      background: #fffdfd;
+      outline: none;
+    }
+
+    .title-input:focus {
+      border-color: rgba(154, 132, 194, 0.45);
+      box-shadow: 0 0 0 4px rgba(237, 228, 255, 0.7);
+    }
+
+    .ghost-btn,
+    .delete-btn {
+      padding: 9px 12px;
+      font-size: 0.9rem;
+      box-shadow: none;
+    }
+
+    .ghost-btn {
+      background: #f7f5ff;
+      color: #6b6280;
+      border: 1px solid var(--border);
+    }
+
+    .delete-btn {
+      background: #fff1f4;
+      color: var(--danger);
+      border: 1px solid rgba(244, 143, 163, 0.25);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 130px;
+      resize: vertical;
+      border: 1px solid rgba(193, 180, 214, 0.28);
+      border-radius: 18px;
+      padding: 16px;
+      font: inherit;
+      line-height: 1.65;
+      color: var(--text);
+      background: #fffdfd;
+      outline: none;
+    }
+
+    textarea:focus {
+      border-color: rgba(154, 132, 194, 0.45);
+      box-shadow: 0 0 0 4px rgba(237, 228, 255, 0.7);
+    }
+
+    .footer-note {
+      margin-top: 24px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .sidebar-title {
+      margin: 0;
+      font-size: 1.15rem;
+    }
+
+    .sidebar-text {
+      margin: 8px 0 18px;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 0.95rem;
+    }
+
+    .toc {
+      display: grid;
+      gap: 10px;
+    }
+
+    .toc-empty {
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px dashed var(--border);
+      border-radius: 18px;
+      padding: 16px;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .toc-link {
+      display: block;
+      text-decoration: none;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.74);
+      border: 1px solid transparent;
+      border-radius: 18px;
+      padding: 12px 14px;
+      transition: transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+    }
+
+    .toc-link:hover,
+    .toc-link:focus-visible {
+      transform: translateY(-1px);
+      border-color: rgba(154, 132, 194, 0.32);
+      background: #fffdfd;
+      outline: none;
+    }
+
+    .toc-link.active {
+      border-color: rgba(230, 183, 76, 0.45);
+      background: linear-gradient(135deg, #fffef2, #fff8fd);
+    }
+
+    .toc-link-title {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .toc-link-id {
+      display: block;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    @media (max-width: 980px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        order: -1;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .shell {
+        padding: 20px;
+        border-radius: 22px;
+      }
+
+      .sidebar {
+        padding: 18px;
+        border-radius: 22px;
+      }
+
+      .block {
+        padding: 14px;
+      }
+
+      .block-header {
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="layout">
+      <section class="shell">
+        <div class="hero">
+          <div class="badge">Personal pastel dictionary</div>
+          <h1>MiniWiki</h1>
+          <p class="subtitle">
+            Organize words, phrases, and meanings in a calmer dictionary-style workspace. Each entry now has a title, a note area, and its own shareable link.
+          </p>
+          <div class="hero-stats">
+            <div class="stat-pill" id="entryCount">0 entries</div>
+            <div class="stat-pill">Soft notes, saved locally</div>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <button class="add-btn" id="addBlockBtn">+ Add Block</button>
+          <button class="save-btn" id="saveBtn">Save</button>
+        </div>
+
+        <div class="link-settings">
+          <label class="link-label" for="baseUrlInput">Share links with this base URL</label>
+          <input
+            id="baseUrlInput"
+            class="base-url-input"
+            type="text"
+            placeholder="http://localhost:8000/"
+          >
+        </div>
+
+        <div class="status" id="status">Your notes live in this browser using localStorage.</div>
+        <div class="blocks" id="blocks"></div>
+        <p class="footer-note">Tip: use the table of contents to hop between entries, or open a copied link later to jump to the exact block.</p>
+      </section>
+
+      <aside class="sidebar">
+        <h2 class="sidebar-title">Table of Contents</h2>
+        <p class="sidebar-text">Jump to any entry quickly. Titles update live as you type.</p>
+        <nav class="toc" id="toc"></nav>
+      </aside>
+    </div>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "miniwiki-blocks";
+    const BASE_URL_KEY = "miniwiki-base-url";
+    const blocksContainer = document.getElementById("blocks");
+    const addBlockBtn = document.getElementById("addBlockBtn");
+    const saveBtn = document.getElementById("saveBtn");
+    const statusEl = document.getElementById("status");
+    const baseUrlInput = document.getElementById("baseUrlInput");
+    const tocEl = document.getElementById("toc");
+    const entryCountEl = document.getElementById("entryCount");
+
+    let blocks = loadBlocks();
+    let preferredBaseUrl = loadBaseUrl();
+    let statusTimer = null;
+    let activeHashId = window.location.hash.slice(1);
+
+    if (blocks.length === 0) {
+      blocks = [createBlock("New entry", "Type a word, expression, or short definition here...")];
+      persistBlocks();
+    }
+
+    renderBlocks();
+    syncBaseUrlInput();
+    focusHashBlock();
+
+    addBlockBtn.addEventListener("click", () => {
+      const block = createBlock("Untitled entry", "");
+      blocks.unshift(block);
+      renderBlocks();
+      setStatus("New block added. Write something, then press Save.");
+
+      const titleInput = document.querySelector(`#${block.id} .title-input`);
+      if (titleInput) {
+        titleInput.focus();
+        titleInput.select();
+      }
+    });
+
+    saveBtn.addEventListener("click", () => {
+      preferredBaseUrl = normalizeBaseUrl(baseUrlInput.value);
+      localStorage.setItem(BASE_URL_KEY, preferredBaseUrl);
+      persistBlocks();
+      setStatus("Saved locally.");
+    });
+
+    baseUrlInput.addEventListener("change", () => {
+      preferredBaseUrl = normalizeBaseUrl(baseUrlInput.value);
+      baseUrlInput.value = preferredBaseUrl;
+      localStorage.setItem(BASE_URL_KEY, preferredBaseUrl);
+      setStatus("Link base updated.");
+    });
+
+    window.addEventListener("hashchange", () => {
+      activeHashId = window.location.hash.slice(1);
+      focusHashBlock();
+      renderToc();
+    });
+
+    function createBlock(title, text) {
+      return {
+        id: "block-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7),
+        title,
+        text
+      };
+    }
+
+    function loadBlocks() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(parsed)) {
+          return [];
+        }
+
+        return parsed.map((block, index) => ({
+          id: block.id || "block-imported-" + index,
+          title: typeof block.title === "string" ? block.title : "",
+          text: typeof block.text === "string" ? block.text : ""
+        }));
+      } catch (error) {
+        console.error("Failed to load MiniWiki data:", error);
+        return [];
+      }
+    }
+
+    function loadBaseUrl() {
+      const saved = localStorage.getItem(BASE_URL_KEY);
+      if (saved) {
+        return normalizeBaseUrl(saved);
+      }
+
+      if (window.location.protocol === "http:" || window.location.protocol === "https:") {
+        return normalizeBaseUrl(window.location.origin + window.location.pathname);
+      }
+
+      return "http://localhost:8000/";
+    }
+
+    function normalizeBaseUrl(value) {
+      const trimmed = (value || "").trim();
+      if (!trimmed) {
+        return "http://localhost:8000/";
+      }
+
+      return trimmed.endsWith("/") ? trimmed : trimmed + "/";
+    }
+
+    function syncBaseUrlInput() {
+      baseUrlInput.value = preferredBaseUrl;
+    }
+
+    function persistBlocks() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(blocks));
+    }
+
+    function renderBlocks() {
+      blocksContainer.innerHTML = "";
+      entryCountEl.textContent = blocks.length + (blocks.length === 1 ? " entry" : " entries");
+      renderToc();
+
+      if (blocks.length === 0) {
+        const emptyState = document.createElement("div");
+        emptyState.className = "empty";
+        emptyState.textContent = "No blocks yet. Click + Add Block to create your first note.";
+        blocksContainer.appendChild(emptyState);
+        return;
+      }
+
+      blocks.forEach((block) => {
+        const article = document.createElement("article");
+        article.className = "block";
+        article.id = block.id;
+
+        const header = document.createElement("div");
+        header.className = "block-header";
+
+        const meta = document.createElement("div");
+        meta.className = "block-meta";
+
+        const titleInput = document.createElement("input");
+        titleInput.className = "title-input";
+        titleInput.type = "text";
+        titleInput.placeholder = "Entry title";
+        titleInput.value = block.title;
+        titleInput.addEventListener("input", (event) => {
+          block.title = event.target.value;
+          renderToc();
+          setStatus("Unsaved changes...");
+        });
+
+        const blockId = document.createElement("div");
+        blockId.className = "block-id";
+        blockId.textContent = "#" + block.id;
+        meta.append(titleInput, blockId);
+
+        const actions = document.createElement("div");
+        actions.className = "block-actions";
+
+        const copyBtn = document.createElement("button");
+        copyBtn.className = "ghost-btn";
+        copyBtn.type = "button";
+        copyBtn.textContent = "Copy Link";
+        copyBtn.addEventListener("click", () => copyBlockLink(block.id));
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "delete-btn";
+        deleteBtn.type = "button";
+        deleteBtn.textContent = "Delete";
+        deleteBtn.addEventListener("click", () => deleteBlock(block.id));
+
+        actions.append(copyBtn, deleteBtn);
+        header.append(meta, actions);
+
+        const textarea = document.createElement("textarea");
+        textarea.placeholder = "Write your note here...";
+        textarea.value = block.text;
+        textarea.addEventListener("input", (event) => {
+          block.text = event.target.value;
+          setStatus("Unsaved changes...");
+        });
+
+        article.append(header, textarea);
+        blocksContainer.appendChild(article);
+      });
+    }
+
+    function renderToc() {
+      tocEl.innerHTML = "";
+
+      if (blocks.length === 0) {
+        const emptyState = document.createElement("div");
+        emptyState.className = "toc-empty";
+        emptyState.textContent = "Your entry list will appear here.";
+        tocEl.appendChild(emptyState);
+        return;
+      }
+
+      blocks.forEach((block, index) => {
+        const link = document.createElement("a");
+        link.className = "toc-link";
+        link.href = "#" + block.id;
+
+        if (block.id === activeHashId) {
+          link.classList.add("active");
+        }
+
+        const title = document.createElement("span");
+        title.className = "toc-link-title";
+        title.textContent = getBlockTitle(block, index);
+
+        const idText = document.createElement("span");
+        idText.className = "toc-link-id";
+        idText.textContent = "#" + block.id;
+
+        link.append(title, idText);
+        tocEl.appendChild(link);
+      });
+    }
+
+    function getBlockTitle(block, index) {
+      const title = (block.title || "").trim();
+      return title || "Untitled entry " + (index + 1);
+    }
+
+    async function copyBlockLink(blockId) {
+      const url = preferredBaseUrl + "#" + blockId;
+
+      try {
+        await navigator.clipboard.writeText(url);
+        setStatus("Link copied: " + url);
+      } catch (error) {
+        fallbackCopy(url);
+        setStatus("Link copied: " + url);
+      }
+    }
+
+    function fallbackCopy(text) {
+      const helper = document.createElement("textarea");
+      helper.value = text;
+      helper.setAttribute("readonly", "");
+      helper.style.position = "absolute";
+      helper.style.left = "-9999px";
+      document.body.appendChild(helper);
+      helper.select();
+      document.execCommand("copy");
+      document.body.removeChild(helper);
+    }
+
+    function deleteBlock(blockId) {
+      blocks = blocks.filter((block) => block.id !== blockId);
+      if (activeHashId === blockId) {
+        activeHashId = "";
+        history.replaceState(null, "", window.location.pathname + window.location.search);
+      }
+      persistBlocks();
+      renderBlocks();
+      setStatus("Block deleted.");
+    }
+
+    function focusHashBlock() {
+      const hash = window.location.hash.slice(1);
+      if (!hash) {
+        activeHashId = "";
+        renderToc();
+        return;
+      }
+
+      activeHashId = hash;
+
+      requestAnimationFrame(() => {
+        const blockEl = document.getElementById(hash);
+        if (!blockEl) {
+          renderToc();
+          return;
+        }
+
+        document.querySelectorAll(".block.highlight").forEach((el) => {
+          el.classList.remove("highlight");
+        });
+
+        blockEl.classList.add("highlight");
+        blockEl.scrollIntoView({ behavior: "smooth", block: "center" });
+
+        const titleInput = blockEl.querySelector(".title-input");
+        if (titleInput) {
+          titleInput.focus();
+        }
+
+        window.clearTimeout(blockEl._highlightTimer);
+        blockEl._highlightTimer = window.setTimeout(() => {
+          blockEl.classList.remove("highlight");
+        }, 2200);
+        renderToc();
+      });
+    }
+
+    function setStatus(message) {
+      statusEl.textContent = message;
+      window.clearTimeout(statusTimer);
+      statusTimer = window.setTimeout(() => {
+        statusEl.textContent = "Your notes live in this browser using localStorage.";
+      }, 2400);
+    }
+  </script>
+</body>
+</html>
